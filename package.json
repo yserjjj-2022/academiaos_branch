@@ -2,6 +2,7 @@
   "name": "academia-os",
   "version": "0.1.1",
   "private": true,
+  "proxy": "http://localhost:3001",
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
     "@ant-design/pro-components": "^2.6.22",
@@ -30,7 +31,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "concurrently \"node server.js\" \"react-scripts start\"",
+    "start:frontend": "react-scripts start",
+    "start:proxy": "node server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -56,6 +59,8 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/d3": "^7.4.0",
-    "@types/pdfjs-dist": "^2.10.378"
+    "@types/pdfjs-dist": "^2.10.378",
+    "concurrently": "^10.0.3",
+    "http-proxy-middleware": "^3.0.7"
   }
 }

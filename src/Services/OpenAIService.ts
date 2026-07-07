@@ -268,8 +268,18 @@ export class OpenAIService {
   }
 
   static openAIConfiguration() {
+    const proxyEndpoint = localStorage.getItem("llmProxyEndpoint")
     const heliconeEndpoint = localStorage.getItem("heliconeEndpoint")
     
+    // Если указан proxy endpoint — используем локальный прокси
+    if (proxyEndpoint) {
+      return {
+        basePath: '/api/llm',  // относительный путь — CRA proxy подхватит
+        dangerouslyAllowBrowser: true,
+      } as ClientOptions
+    }
+    
+    // Иначе — Helicone
     return {
       basePath: heliconeEndpoint || undefined,
       baseOptions: {
