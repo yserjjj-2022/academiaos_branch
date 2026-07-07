@@ -35,6 +35,23 @@ To get started with AcademiaOS, you require [Node.js](https://nodejs.org/en/down
 
 1. Use `git clone` to clone this repository. 
 2. Run `npm install`.
+3. Create a `.env` file in the project root with:
+   ```
+   LLM_PROXY_ENDPOINT=https://routerai.ru
+   LLM_PROXY_KEY=your_routerai_key
+   ```
+4. Run `npm start` — this launches two servers:
+   - React on `http://localhost:3000` (frontend)
+   - Proxy server on `http://localhost:3001` (LLM proxy)
+
+## 🔑 LLM Setup
+
+To use language models, open the settings in the app (More Options):
+
+- **OpenAI Key** — any string (auth is handled by the proxy)
+- **Proxy API Key** — your key from routerai.ru (or other proxy)
+- **Model Name** — model name (e.g., `openai/gpt-4o-mini`)
+- **Report Language** — report language (English / Russian)
 
 ## 👨‍💻 Development Mode  
 

@@ -214,13 +214,13 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ onSubmit }) => {
                   name='llmProxyEndpoint'
                   extra={
                     <span>
-                      Custom LLM proxy endpoint (e.g.{" "}
-                      <Typography.Text code>https://routerai.ru/v1</Typography.Text>
-                      ). Must support CORS or use browser extension.
+                      LLM proxy endpoint (e.g.{" "}
+                      <Typography.Text code>https://routerai.ru</Typography.Text>
+                      ). Requires local proxy server (run with <Typography.Text code>npm start</Typography.Text>).
                     </span>
                   }>
                   <Input
-                    placeholder='https://routerai.ru/v1'
+                    placeholder='https://routerai.ru'
                     defaultValue={defaultValues.llmProxyEndpoint || ""}
                   />
                 </Form.Item>
