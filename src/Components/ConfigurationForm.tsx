@@ -31,6 +31,9 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ onSubmit }) => {
     adobePDFOCR_client_secret: localStorage.getItem(
       "adobePDFOCR_client_secret"
     ),
+    llmProxyEndpoint: localStorage.getItem("llmProxyEndpoint"),
+    llmProxyKey: localStorage.getItem("llmProxyKey"),
+    reportLanguage: localStorage.getItem("reportLanguage") || "en",
   }
 
   const handleSubmit = async () => {
@@ -67,6 +70,18 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ onSubmit }) => {
         values.adobePDFOCR_client_secret ??
           defaultValues.adobePDFOCR_client_secret ??
           ""
+      )
+      localStorage.setItem(
+        "llmProxyEndpoint",
+        values.llmProxyEndpoint ?? defaultValues.llmProxyEndpoint ?? ""
+      )
+      localStorage.setItem(
+        "llmProxyKey",
+        values.llmProxyKey ?? defaultValues.llmProxyKey ?? ""
+      )
+      localStorage.setItem(
+        "reportLanguage",
+        values.reportLanguage ?? defaultValues.reportLanguage ?? "en"
       )
 
       try {
@@ -150,20 +165,13 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ onSubmit }) => {
               <Col span={24}>
                 <Form.Item
                   name='modelName'
-                  extra='Select the OpenAI model you want to use'>
-                  <Select
-                    placeholder='Choose OpenAI Model'
+                  extra='Model name from your proxy (e.g. llama-3-70b, mistral-large, gpt-4o — check routerai.ru for available models)'>
+                  <Input
+                    placeholder='gpt-4-1106-preview'
                     defaultValue={
                       localStorage.getItem("modelName") || "gpt-4-1106-preview"
-                    }>
-                    <Select.Option value='gpt-4-1106-preview'>
-                      GPT-4-1106-Preview (GPT-4 turbo with 128k context window)
-                    </Select.Option>
-                    <Select.Option value='gpt-4'>GPT-4</Select.Option>
-                    <Select.Option value='gpt-3.5-turbo'>
-                      GPT-3.5-Turbo
-                    </Select.Option>
-                  </Select>
+                    }
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -201,6 +209,48 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ onSubmit }) => {
               </Col>
             </Row>
             <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item
+                  name='llmProxyEndpoint'
+                  extra={
+                    <span>
+                      Custom LLM proxy endpoint (e.g.{" "}
+                      <Typography.Text code>https://routerai.ru/v1</Typography.Text>
+                      ). Overrides OpenAI/Helicone base URL.
+                    </span>
+                  }>
+                  <Input
+                    placeholder='https://routerai.ru/v1'
+                    defaultValue={defaultValues.llmProxyEndpoint || ""}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name='llmProxyKey'
+                  extra='API key for the custom LLM proxy'>
+                  <Input.Password
+                    placeholder='Proxy API key'
+                    defaultValue={defaultValues.llmProxyKey || ""}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item
+                  name='reportLanguage'
+                  extra='Language for all LLM outputs and reports'>
+                  <Select
+                    placeholder='Select report language'
+                    defaultValue={
+                      localStorage.getItem("reportLanguage") || "en"
+                    }>
+                    <Select.Option value="en">English</Select.Option>
+                    <Select.Option value="ru">Русский</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
               <Col span={12}>
                 <Form.Item
                   //   label='OpenAI Key'

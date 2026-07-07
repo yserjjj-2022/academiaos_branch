@@ -26,6 +26,26 @@ export class OpenAIService {
     return localStorage.getItem("openAIKey") || ""
   }
 
+  public static getReportLanguage = () => {
+    return localStorage.getItem("reportLanguage") || "en"
+  }
+
+  public static getLanguageName = (code: string) => {
+    return code === "ru" ? "Russian" : "English"
+  }
+
+  public static getLanguageCodeForPrompt = (code: string) => {
+    return code === "ru" ? "ru" : "en"
+  }
+
+  public static getProxyEndpoint = () => {
+    return localStorage.getItem("llmProxyEndpoint") || ""
+  }
+
+  public static getProxyKey = () => {
+    return localStorage.getItem("llmProxyKey") || ""
+  }
+
   public static handleError = (error: any) => {
     message.error(error.message || error?.response?.data?.message || error)
   }
@@ -107,9 +127,11 @@ export class OpenAIService {
       }
 
       if ((fullText?.length || 0) > 0) {
+        const lang = OpenAIService.getReportLanguage()
+        const langName = OpenAIService.getLanguageName(lang)
         const result = await model.predictMessages([
           new SystemMessage(
-            "You extract information from a paper. Answer the question shortly and concisely in only one or few words about the given abstract, no need for full sentences. Only reply with the answer. Does not have to be perfect, but if you don't have a somewhat acceptable answer, reply 'n/a'."
+            `You extract information from a paper. Answer the question shortly and concisely in only one or few words about the given abstract, no need for full sentences. Only reply with the answer. Does not have to be perfect, but if you don't have a somewhat acceptable answer, reply 'n/a'. Respond in ${langName}.`
           ),
           new HumanMessage(
             `${paper?.title}\n${fullText}\n\nDescribe the '${detail}' of the given paper.`
@@ -137,10 +159,12 @@ export class OpenAIService {
       )
 
       if ((papers?.length || 0) > 0) {
+        const lang = OpenAIService.getReportLanguage()
+        const langName = OpenAIService.getLanguageName(lang)
         const result = await model.predictMessages(
           [
             new SystemMessage(
-              `You are provided with a list of paper titles and you are tasked to find research questions that might be answered developing a new theoretical model. Return a JSON-object with an array of strings, each representing a potential research question in the following format: {"research_questions": string[]}. Return only a JSON array of strings, no additional text.`
+              `You are provided with a list of paper titles and you are tasked to find research questions that might be answered developing a new theoretical model. Return a JSON-object with an array of strings, each representing a potential research question in the following format: {"research_questions": string[]}. Return only a JSON array of strings, no additional text. Respond in ${langName}.`
             ),
             new HumanMessage(
               `${papers
@@ -206,10 +230,12 @@ export class OpenAIService {
       // Loop through each chunk and apply initial coding
       await asyncForEach(chunks, async (chunk, index) => {
         console.log(`Processing chunk ${index + 1} of ${chunks.length}`)
+        const lang = OpenAIService.getReportLanguage()
+        const langName = OpenAIService.getLanguageName(lang)
         const result = await model.predictMessages(
           [
             new SystemMessage(
-              'You are tasked with applying the initial coding phase of the Gioia method to the provided academic paper. In this phase, scrutinize the text to identify emergent themes, concepts, or patterns. Your output should be a JSON object with an array of strings no longer than 7 words, each representing a distinct initial code in the language of the raw source. For example, your output should be in this format: {"codes": string[]}. Ensure to return ONLY a proper JSON array of strings.'
+              'You are tasked with applying the initial coding phase of the Gioia method to the provided academic paper. In this phase, scrutinize the text to identify emergent themes, concepts, or patterns. Your output should be a JSON object with an array of strings no longer than 7 words, each representing a distinct initial code in the language of the raw source. For example, your output should be in this format: {"codes": string[]}. Ensure to return ONLY a proper JSON array of strings. Respond in ' + langName + '.'
             ),
             new HumanMessage(
               `${paper?.title}\n${
@@ -241,7 +267,23 @@ export class OpenAIService {
   }
 
   static openAIConfiguration() {
+    const proxyEndpoint = localStorage.getItem("llmProxyEndpoint")
+    const proxyKey = localStorage.getItem("llmProxyKey")
     const heliconeEndpoint = localStorage.getItem("heliconeEndpoint")
+    
+    // Если указан proxy endpoint — используем его
+    if (proxyEndpoint) {
+      return {
+        basePath: proxyEndpoint,
+        baseOptions: {
+          headers: {
+            "Authorization": `Bearer ${proxyKey || OpenAIService.getOpenAIKey()}`,
+          },
+        },
+      } as ClientOptions
+    }
+    
+    // Иначе — Helicone
     return {
       basePath: heliconeEndpoint || undefined,
       baseOptions: {
@@ -258,9 +300,10 @@ export class OpenAIService {
       BaseLanguageModelParams
   ) {
     const modelName = localStorage.getItem("modelName") || "gpt-4-1106-preview"
+    const proxyKey = localStorage.getItem("llmProxyKey")
     return {
       modelName,
-      openAIApiKey: OpenAIService.getOpenAIKey(),
+      openAIApiKey: proxyKey || OpenAIService.getOpenAIKey(),
       ...(props || {}),
     } as Partial<OpenAIChatInput> &
       Partial<AzureOpenAIInput> &
@@ -301,10 +344,12 @@ export class OpenAIService {
       // Loop through each chunk and apply initial coding
       await asyncForEach(chunks, async (chunk, index) => {
         // Create a message prompt for 2nd order coding
+        const lang = OpenAIService.getReportLanguage()
+        const langName = OpenAIService.getLanguageName(lang)
         const result = await model.predictMessages(
           [
             new SystemMessage(
-              'You are tasked with applying the 2nd Order Coding phase of the Gioia method. In this phase, identify higher-level themes or categories that aggregate the initial codes. Your output should be a JSON-formatted object mapping each higher-level theme to an array of initial codes that belong to it. As a general example, "employee sentiment" could be a 2nd order code to 1st level codes "Positive feelings toward new policy" and "Sense of control" Your output should look like this, where the keys are the higher-level concepts: {"Some higher-Level theme": ["some initial code", "another initial code"], "Another higher-level theme": ["some initial code"]}.'
+              'You are tasked with applying the 2nd Order Coding phase of the Gioia method. In this phase, identify higher-level themes or categories that aggregate the initial codes. Your output should be a JSON-formatted object mapping each higher-level theme to an array of initial codes that belong to it. As a general example, "employee sentiment" could be a 2nd order code to 1st level codes "Positive feelings toward new policy" and "Sense of control" Your output should look like this, where the keys are the higher-level concepts: {"Some higher-Level theme": ["some initial code", "another initial code"], "Another higher-level theme": ["some initial code"]}. Respond in ' + langName + '.'
             ),
             new HumanMessage(
               `Part of the initial codes are as follows: ${chunk.pageContent}\n\nPerform 2nd Order Coding according to the Gioia method and return a JSON object of 12 focus codes.`
@@ -347,10 +392,12 @@ export class OpenAIService {
       const jsonString = JSON.stringify(Object.keys(secondOrderCodes))
 
       // Create a message prompt for the Aggregate Dimensions phase
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages(
         [
           new SystemMessage(
-            'You are tasked with applying the Aggregate Dimensions phase of the Gioia method. In this phase, identify overarching theoretical dimensions (5-7) that aggregate the 2nd order codes. Your output should be a JSON-formatted object mapping each aggregate dimension to an array of 2nd order codes that belong to it. As a (probably unrelated) general example, "Policy Usability" could make for a good, quantifiable dimension. Your output should look like this, where the keys are the (quantifiable) dimensions: {"some dim": ["theme", "another theme"], "another dim": ["theme123"]}. Ensure that the aggregate dimensions are grounded in the themes and to return ONLY a proper JSON object.'
+            'You are tasked with applying the Aggregate Dimensions phase of the Gioia method. In this phase, identify overarching theoretical dimensions (5-7) that aggregate the 2nd order codes. Your output should be a JSON-formatted object mapping each aggregate dimension to an array of 2nd order codes that belong to it. As a (probably unrelated) general example, "Policy Usability" could make for a good, quantifiable dimension. Your output should look like this, where the keys are the (quantifiable) dimensions: {"some dim": ["theme", "another theme"], "another dim": ["theme123"]}. Ensure that the aggregate dimensions are grounded in the themes and to return ONLY a proper JSON object. Respond in ' + langName + '.'
           ),
           new HumanMessage(
             `The 2nd order codes are as follows: ${jsonString}\n\nPerform aggregation into theoretical dimensions according to the Gioia method and return a JSON object.`
@@ -390,12 +437,14 @@ export class OpenAIService {
       const jsonString = JSON.stringify(aggregateDimensions)
 
       // Create a message prompt for brainstorming applicable theories
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages(
         [
           new SystemMessage(
             `Your task is to brainstorm theoretical models from existing literature that could be applicable to the research findings. Each theory should be well-defined and should relate to one or more aggregate dimensions. The output should be a JSON-object with an array following this schema: 
           {"theories": {"theory": string, "description": string, "relatedDimensions": string[], "possibleResearchQuestions": string[]}[]}
-          `
+          Respond in ${langName}.`
           ),
           new HumanMessage(
             `Our research aims to understand specific phenomena within a given context. We have identified multiple aggregate dimensions and second-order codes that emerged from our data. Could you suggest theories that could help explain these dimensions and codes? The aggregate dimensions and codes are as follows: ${jsonString}`
@@ -436,10 +485,12 @@ export class OpenAIService {
       const jsonString = JSON.stringify(modelData?.aggregateDimensions)
 
       // Create a message prompt for brainstorming applicable theories
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages(
         [
           new SystemMessage(
-            `Your task is to hypothesize which concepts could be related to each other. Return a JSON-object with an array of tuple arrays, where each tuple array represents a possible relationship between two concepts. The output should be a JSON-formatted array following this schema: {"tuples": [[string, string], [string, string], ...]}. E.g. {"tuples": [["Knowledge Management", "Organizational Performance"]]}. This allows us to in the next step research the relationship between the concepts in the literature.`
+            `Your task is to hypothesize which concepts could be related to each other. Return a JSON-object with an array of tuple arrays, where each tuple array represents a possible relationship between two concepts. The output should be a JSON-formatted array following this schema: {"tuples": [[string, string], [string, string], ...]}. E.g. {"tuples": [["Knowledge Management", "Organizational Performance"]]}. This allows us to in the next step research the relationship between the concepts in the literature. Respond in ${langName}.`
           ),
           new HumanMessage(
             `Our research aims to understand ${
@@ -514,6 +565,9 @@ export class OpenAIService {
       const interrelationShips = await asyncMap(
         conceptTuples,
         async ([concept1, concept2]) => {
+          const lang = OpenAIService.getReportLanguage()
+          const langName = OpenAIService.getLanguageName(lang)
+          
           const query1 = await embeddings.embedQuery(
             `${concept1} - ${concept2} relationship`
           )
@@ -539,7 +593,7 @@ export class OpenAIService {
 
           const summaryResult = await model.predictMessages([
             new SystemMessage(
-              `Your task is to summarize the interrelationship between ${concept1} and ${concept2} in one short sentence. If evidence, include information about correlation or causation, direct, mediated or conditional interaction, static or dynamic relationship, feedback loops, uni- or bi-directional, strong or weak.`
+              `Your task is to summarize the interrelationship between ${concept1} and ${concept2} in one short sentence. If evidence, include information about correlation or causation, direct, mediated or conditional interaction, static or dynamic relationship, feedback loops, uni- or bi-directional, strong or weak. Respond in ${langName}.`
             ),
             new HumanMessage(
               `${relevantParagraphs1}\n\nNow, provide a summary in one short sentence.`
@@ -578,9 +632,11 @@ export class OpenAIService {
       const jsonString = JSON.stringify(modelData.aggregateDimensions)
 
       // Create a message prompt for brainstorming applicable theories
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages([
         new SystemMessage(
-          `You are a qualitative researcher tasked with constructing a theoretical model from existing literature that could be applicable to the research findings. The model should be well-defined and should relate to one or more aggregate dimensions. It should be novel and original. You can build on existing theories, however, you should introduce new ideas. Emphasize the relationships between the dimensions and the model. Explain how the relationships might be causal or correlational, be clear on the narrative. You are non-conversational and should not respond to the user, but give a general description of model. Give a name to the model.`
+          `You are a qualitative researcher tasked with constructing a theoretical model from existing literature that could be applicable to the research findings. The model should be well-defined and should relate to one or more aggregate dimensions. It should be novel and original. You can build on existing theories, however, you should introduce new ideas. Emphasize the relationships between the dimensions and the model. Explain how the relationships might be causal or correlational, be clear on the narrative. You are non-conversational and should not respond to the user, but give a general description of model. Give a name to the model. Respond in ${langName}.`
         ),
         new HumanMessage(
           `${
@@ -623,9 +679,11 @@ export class OpenAIService {
       )
 
       // Create a message prompt for brainstorming applicable theories
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages([
         new SystemMessage(
-          `You extract theoretical model names. If none given, invent an original one. You only reply with the name, nothing else.`
+          `You extract theoretical model names. If none given, invent an original one. You only reply with the name, nothing else. Respond in ${langName}.`
         ),
         new HumanMessage(
           `${modelDescription}
@@ -651,9 +709,11 @@ export class OpenAIService {
       )
 
       // Create a message prompt for brainstorming applicable theories
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages([
         new SystemMessage(
-          `You are a qualitative researcher tasked with critiquing a theoretical model. Offer your comments on novelty, conciseness, clarity and theoretical insight and brainstorm potential new patterns to discover in the data. You are non-conversational and should not respond to the user, only return the critique, nothing else.`
+          `You are a qualitative researcher tasked with critiquing a theoretical model. Offer your comments on novelty, conciseness, clarity and theoretical insight and brainstorm potential new patterns to discover in the data. You are non-conversational and should not respond to the user, only return the critique, nothing else. Respond in ${langName}.`
         ),
         new HumanMessage(
           `${
@@ -686,6 +746,8 @@ export class OpenAIService {
       )
 
       // Create a message prompt for brainstorming applicable theories
+      const lang = OpenAIService.getReportLanguage()
+      const langName = OpenAIService.getLanguageName(lang)
       const result = await model.predictMessages([
         new SystemMessage(
           `You are a qualitative researcher tasked with visualizing a theoretical model with MermaidJS. Example:
@@ -712,7 +774,7 @@ export class OpenAIService {
 
         As we have seen in above diagram, ==> is used to indicate a strong direct influence, --> is used to indicate a weaker influence, -.-> is used to indicate a moderating relationship, and --- is used to indicate a correlation.
         Evidence can be cited by adding a line break and then the evidence in single quotes. Use first-order codes or second-order codes as evidence only, preferably not as their own nodes.
-        Now, given a model description, you should generate a MermaidJS diagram like the one above, showing the interrelationship between different concepts. Keep it simple and effective. You are non-conversational and should not respond to the user, only return the MermaidJS code, nothing else.`
+        Now, given a model description, you should generate a MermaidJS diagram like the one above, showing the interrelationship between different concepts. Keep it simple and effective. You are non-conversational and should not respond to the user, only return the MermaidJS code, nothing else. Respond in ${langName}.`
         ),
         new HumanMessage(
           `${
