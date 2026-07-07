@@ -274,8 +274,7 @@ export class OpenAIService {
     // Если указан proxy endpoint — используем локальный прокси
     if (proxyEndpoint) {
       return {
-        basePath: '/api/llm',  // относительный путь — CRA proxy подхватит
-        dangerouslyAllowBrowser: true,
+        baseURL: 'http://localhost:3001/api/llm',
       } as ClientOptions
     }
     
