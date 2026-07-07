@@ -301,7 +301,7 @@ export class OpenAIService {
     
     const config: Partial<OpenAIChatInput> &
       Partial<AzureOpenAIInput> &
-      BaseLanguageModelParams & { basePath?: string; reasoning?: { enabled: boolean } } = {
+      BaseLanguageModelParams & { basePath?: string; extraBody?: Record<string, any> } = {
       modelName,
       openAIApiKey: proxyKey || openAIKey,
       ...(props || {}),
@@ -310,8 +310,8 @@ export class OpenAIService {
     // Если есть proxy — используем его напрямую через basePath
     if (proxyEndpoint) {
       config.basePath = proxyEndpoint
-      // Отключаем reasoning по умолчанию (экономит токены)
-      config.reasoning = { enabled: false }
+      // Отключаем reasoning через extra_body (langchain 0.0.190)
+      config.extraBody = { reasoning: { enabled: false } }
     }
     
     return config
