@@ -99,9 +99,10 @@ export class OpenAIService {
         documents.push(...(output || []))
 
         // Create embeddings
+        const proxyKey = localStorage.getItem("llmProxyKey")
         const embeddings = new OpenAIEmbeddings(
           {
-            openAIApiKey: OpenAIService.getOpenAIKey(),
+            openAIApiKey: proxyKey || OpenAIService.getOpenAIKey(),
           },
           OpenAIService.openAIConfiguration()
         )
@@ -268,18 +269,12 @@ export class OpenAIService {
 
   static openAIConfiguration() {
     const proxyEndpoint = localStorage.getItem("llmProxyEndpoint")
-    const proxyKey = localStorage.getItem("llmProxyKey")
     const heliconeEndpoint = localStorage.getItem("heliconeEndpoint")
     
     // Если указан proxy endpoint — используем его
     if (proxyEndpoint) {
       return {
         basePath: proxyEndpoint,
-        baseOptions: {
-          headers: {
-            "Authorization": `Bearer ${proxyKey || OpenAIService.getOpenAIKey()}`,
-          },
-        },
       } as ClientOptions
     }
     
@@ -301,9 +296,13 @@ export class OpenAIService {
   ) {
     const modelName = localStorage.getItem("modelName") || "gpt-4-1106-preview"
     const proxyKey = localStorage.getItem("llmProxyKey")
+    const openAIKey = OpenAIService.getOpenAIKey()
+    const proxyEndpoint = localStorage.getItem("llmProxyEndpoint")
+    
     return {
       modelName,
-      openAIApiKey: proxyKey || OpenAIService.getOpenAIKey(),
+      openAIApiKey: proxyKey || openAIKey,
+      ...(proxyEndpoint ? { baseURL: proxyEndpoint } : {}),
       ...(props || {}),
     } as Partial<OpenAIChatInput> &
       Partial<AzureOpenAIInput> &
@@ -534,9 +533,10 @@ export class OpenAIService {
   > {
     try {
       const documents: Document[] = []
+      const proxyKey = localStorage.getItem("llmProxyKey")
       const embeddings = new OpenAIEmbeddings(
         {
-          openAIApiKey: OpenAIService.getOpenAIKey(),
+          openAIApiKey: proxyKey || OpenAIService.getOpenAIKey(),
         },
         OpenAIService.openAIConfiguration()
       )
