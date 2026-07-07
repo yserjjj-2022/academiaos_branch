@@ -216,7 +216,7 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ onSubmit }) => {
                     <span>
                       Custom LLM proxy endpoint (e.g.{" "}
                       <Typography.Text code>https://routerai.ru/v1</Typography.Text>
-                      ). Overrides OpenAI/Helicone base URL.
+                      ). Must support CORS or use browser extension.
                     </span>
                   }>
                   <Input

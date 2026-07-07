@@ -268,17 +268,8 @@ export class OpenAIService {
   }
 
   static openAIConfiguration() {
-    const proxyEndpoint = localStorage.getItem("llmProxyEndpoint")
     const heliconeEndpoint = localStorage.getItem("heliconeEndpoint")
     
-    // Если указан proxy endpoint — используем его
-    if (proxyEndpoint) {
-      return {
-        basePath: proxyEndpoint,
-      } as ClientOptions
-    }
-    
-    // Иначе — Helicone
     return {
       basePath: heliconeEndpoint || undefined,
       baseOptions: {
@@ -299,14 +290,20 @@ export class OpenAIService {
     const openAIKey = OpenAIService.getOpenAIKey()
     const proxyEndpoint = localStorage.getItem("llmProxyEndpoint")
     
-    return {
+    const config: Partial<OpenAIChatInput> &
+      Partial<AzureOpenAIInput> &
+      BaseLanguageModelParams & { basePath?: string } = {
       modelName,
       openAIApiKey: proxyKey || openAIKey,
-      ...(proxyEndpoint ? { baseURL: proxyEndpoint } : {}),
       ...(props || {}),
-    } as Partial<OpenAIChatInput> &
-      Partial<AzureOpenAIInput> &
-      BaseLanguageModelParams
+    }
+    
+    // Если есть proxy — используем его напрямую через basePath
+    if (proxyEndpoint) {
+      config.basePath = proxyEndpoint
+    }
+    
+    return config
   }
 
   static async secondOrderCoding(codesArray: string[]) {
