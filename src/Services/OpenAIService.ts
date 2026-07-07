@@ -274,7 +274,7 @@ export class OpenAIService {
     // Если указан proxy endpoint — используем локальный прокси
     if (proxyEndpoint) {
       return {
-        baseURL: 'http://localhost:3001/api/llm',
+        basePath: 'http://localhost:3001/api/llm',
       } as ClientOptions
     }
     
@@ -301,7 +301,7 @@ export class OpenAIService {
     
     const config: Partial<OpenAIChatInput> &
       Partial<AzureOpenAIInput> &
-      BaseLanguageModelParams & { basePath?: string } = {
+      BaseLanguageModelParams & { basePath?: string; reasoning?: { enabled: boolean } } = {
       modelName,
       openAIApiKey: proxyKey || openAIKey,
       ...(props || {}),
@@ -310,6 +310,8 @@ export class OpenAIService {
     // Если есть proxy — используем его напрямую через basePath
     if (proxyEndpoint) {
       config.basePath = proxyEndpoint
+      // Отключаем reasoning по умолчанию (экономит токены)
+      config.reasoning = { enabled: false }
     }
     
     return config
